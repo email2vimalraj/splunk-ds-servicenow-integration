@@ -1,0 +1,32 @@
+# Example configuration for splunk-ds-camr
+refreshInterval: 1m
+
+destinations:
+  lane1: ch
+  lane2: ch
+  lane3: oip
+  lane4: oip
+
+# dummy CMDB entries to start with; replace later with real CMDB integration
+dummyCMDB:
+  entries:
+    - hostname: sl73abc001
+      businessServiceLane: lane1
+    - hostname: sl73abc002
+      businessServiceLane: lane1
+    - hostname: sl73xyz101
+      businessServiceLane: lane3
+    - hostname: sl73xyz102
+      businessServiceLane: lane3
+
+serverclass:
+  path: ./serverclass.conf
+  backup: true
+  # app -> serverClass name mapping
+  appClass:
+    AA-DESTINATION-CH: AA-DESTINATION-CH-class
+    AA-DESTINATION-OIP: AA-DESTINATION-OIP-class
+  # app -> destination key mapping
+  appDestination:
+    AA-DESTINATION-CH: ch
+    AA-DESTINATION-OIP: oip
