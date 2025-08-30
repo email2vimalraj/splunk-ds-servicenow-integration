@@ -40,10 +40,10 @@ type ServerclassConfig struct {
 }
 
 type Config struct {
-	RefreshInterval Duration          `yaml:"refreshInterval"`
-	Destinations    map[string]string `yaml:"destinations"`
-	DummyCMDB       DummyCMDBConfig   `yaml:"dummyCMDB"`
-	Serverclass     ServerclassConfig `yaml:"serverclass"`
+	RefreshInterval Duration            `yaml:"refreshInterval"`
+	Destinations    map[string][]string `yaml:"destinations"`
+	DummyCMDB       DummyCMDBConfig     `yaml:"dummyCMDB"`
+	Serverclass     ServerclassConfig   `yaml:"serverclass"`
 }
 
 func Load(path string) (*Config, error) {

@@ -69,8 +69,13 @@ func runOnce(ctx context.Context, c cmdb.Client, u *serverclass.Updater, cfg *co
 		return err
 	}
 
-	// lane -> destination using config mapping
-	destByLane := cfg.Destinations
+	// Build lane -> destination map from destination -> lanes config
+	destByLane := map[string]string{}
+	for dest, lanes := range cfg.Destinations {
+		for _, lane := range lanes {
+			destByLane[lane] = dest
+		}
+	}
 	hostsByDest := map[string][]string{}
 	for _, e := range entries {
 		dest := destByLane[e.BusinessServiceLane]

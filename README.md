@@ -6,7 +6,7 @@ A Go utility for Splunk Deployment Servers to map CMDB server entries to destina
 
 - Fetch servers from CMDB (dummy adapter now; pluggable later)
 - Configurable refresh interval loop
-- Map Business Service Lanes to destinations (e.g., lane1->ch, lane3->oip)
+- Map destinations to one or more Business Service Lanes (e.g., ch -> [lane1,lane2], oip -> [lane3,lane4])
 - Compress hostnames to wildcard patterns (e.g., `sl73abc001`,`sl73abc002` -> `sl73abc*`)
 - Update `serverclass.conf` whitelist per server class/app
 
@@ -41,7 +41,7 @@ go build -o bin/splunk-ds-camr ./cmd/splunk-ds-camr
 See `config.example.yaml`. Key parts:
 
 - `refreshInterval`: Go duration, e.g., `1m` or `5m`
-- `destinations`: map lane -> destination key
+- `destinations`: map destination -> array of lanes
 - `dummyCMDB.entries`: list of hostname + businessServiceLane
 - `serverclass.path`: location of Splunk `serverclass.conf`
 - `serverclass.backup`: whether to create a `.bak` before writing

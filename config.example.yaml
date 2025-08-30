@@ -2,10 +2,8 @@
 refreshInterval: 1m
 
 destinations:
-  lane1: ch
-  lane2: ch
-  lane3: oip
-  lane4: oip
+  ch: [lane1, lane2]
+  oip: [lane3, lane4]
 
 # dummy CMDB entries to start with; replace later with real CMDB integration
 dummyCMDB:
