@@ -2,29 +2,45 @@
 refreshInterval: 1m
 
 destinations:
-  ch: [lane1, lane2]
-  oip: [lane3, lane4]
+  dest1: [lane1, lane2]
+  dest2: [lane3, lane4]
 
-# dummy CMDB entries to start with; replace later with real CMDB integration
-dummyCMDB:
-  entries:
-    - hostname: sl73abc001
-      businessServiceLane: lane1
-    - hostname: sl73def002
-      businessServiceLane: lane1
-    - hostname: sl73xyz101
-      businessServiceLane: lane3
-    - hostname: sl73xyz102
-      businessServiceLane: lane3
+cmdb:
+  # type can be: dummy | servicenow
+  type: dummy
+  dummy:
+    entries:
+      - hostname: abc001
+        businessServiceLane: lane1
+      - hostname: abc002
+        businessServiceLane: lane1
+      - hostname: xyz101
+        businessServiceLane: lane3
+      - hostname: xyz102
+        businessServiceLane: lane3
+  servicenow:
+    baseURL: https://your-instance.service-now.com
+    table: cmdb_ci_server
+    query: "u_active=true^operational_status=1"
+    hostnameField: host_name
+    laneField: u_business_service_lane
+    pageSize: 200
+    timeout: 30s
+    insecureSkipVerify: false
+    auth:
+      # one of: bearerToken or username/password
+      bearerToken: ""
+      username: ""
+      password: ""
 
 serverclass:
   path: ./serverclass.conf
   backup: true
   # app -> serverClass name mapping
   appClass:
-    AA-DESTINATION-CH: AA-DESTINATION-CH-class
-    AA-DESTINATION-OIP: AA-DESTINATION-OIP-class
+    AA-DESTINATION-dest1: AA-DESTINATION-dest1-class
+    AA-DESTINATION-dest2: AA-DESTINATION-dest2-class
   # app -> destination key mapping
   appDestination:
-    AA-DESTINATION-CH: ch
-    AA-DESTINATION-OIP: oip
+    AA-DESTINATION-dest1: dest1
+    AA-DESTINATION-dest2: dest2

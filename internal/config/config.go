@@ -32,6 +32,30 @@ type DummyCMDBConfig struct {
 	Entries []DummyCMDBEntry `yaml:"entries"`
 }
 
+type ServiceNowAuth struct {
+	Username    string `yaml:"username"`
+	Password    string `yaml:"password"`
+	BearerToken string `yaml:"bearerToken"`
+}
+
+type ServiceNowConfig struct {
+	BaseURL            string         `yaml:"baseURL"`
+	Table              string         `yaml:"table"`
+	Query              string         `yaml:"query"`
+	HostnameField      string         `yaml:"hostnameField"`
+	LaneField          string         `yaml:"laneField"`
+	PageSize           int            `yaml:"pageSize"`
+	Timeout            Duration       `yaml:"timeout"`
+	InsecureSkipVerify bool           `yaml:"insecureSkipVerify"`
+	Auth               ServiceNowAuth `yaml:"auth"`
+}
+
+type CMDBConfig struct {
+	Type       string           `yaml:"type"` // "dummy" or "servicenow"
+	Dummy      DummyCMDBConfig  `yaml:"dummy"`
+	ServiceNow ServiceNowConfig `yaml:"servicenow"`
+}
+
 type ServerclassConfig struct {
 	Path           string            `yaml:"path"`
 	Backup         bool              `yaml:"backup"`
@@ -42,8 +66,10 @@ type ServerclassConfig struct {
 type Config struct {
 	RefreshInterval Duration            `yaml:"refreshInterval"`
 	Destinations    map[string][]string `yaml:"destinations"`
-	DummyCMDB       DummyCMDBConfig     `yaml:"dummyCMDB"`
-	Serverclass     ServerclassConfig   `yaml:"serverclass"`
+	// Deprecated: use CMDB
+	DummyCMDB   DummyCMDBConfig   `yaml:"dummyCMDB"`
+	CMDB        CMDBConfig        `yaml:"cmdb"`
+	Serverclass ServerclassConfig `yaml:"serverclass"`
 }
 
 func Load(path string) (*Config, error) {
@@ -57,6 +83,23 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.RefreshInterval.Duration == 0 {
 		cfg.RefreshInterval = Duration{Duration: 5 * time.Minute}
+	}
+	// Defaults for CMDB
+	if cfg.CMDB.Type == "" {
+		if len(cfg.DummyCMDB.Entries) > 0 {
+			cfg.CMDB.Type = "dummy"
+			cfg.CMDB.Dummy = cfg.DummyCMDB
+		} else {
+			cfg.CMDB.Type = "dummy"
+		}
+	}
+	if cfg.CMDB.Type == "servicenow" {
+		if cfg.CMDB.ServiceNow.PageSize == 0 {
+			cfg.CMDB.ServiceNow.PageSize = 100
+		}
+		if cfg.CMDB.ServiceNow.Timeout.Duration == 0 {
+			cfg.CMDB.ServiceNow.Timeout = Duration{Duration: 30 * time.Second}
+		}
 	}
 	return &cfg, nil
 }

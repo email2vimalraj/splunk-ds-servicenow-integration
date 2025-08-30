@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/example/splunk-ds-camr/internal/cmdb"
+	sn "github.com/example/splunk-ds-camr/internal/cmdb/servicenow"
 	"github.com/example/splunk-ds-camr/internal/config"
 	"github.com/example/splunk-ds-camr/internal/patterns"
 	"github.com/example/splunk-ds-camr/internal/serverclass"
@@ -28,7 +29,13 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	cmdbClient := cmdb.NewDummy(cfg.DummyCMDB)
+	var cmdbClient cmdb.Client
+	switch cfg.CMDB.Type {
+	case "servicenow":
+		cmdbClient = sn.New(cfg.CMDB.ServiceNow)
+	default:
+		cmdbClient = cmdb.NewDummy(cfg.CMDB.Dummy)
+	}
 	updater := serverclass.NewUpdater(serverclass.Config{
 		Path:           cfg.Serverclass.Path,
 		Backup:         cfg.Serverclass.Backup,

@@ -4,10 +4,10 @@ A Go utility for Splunk Deployment Servers to map CMDB server entries to destina
 
 ## Features
 
-- Fetch servers from CMDB (dummy adapter now; pluggable later)
+- Fetch servers from CMDB (dummy adapter; ServiceNow support)
 - Configurable refresh interval loop
-- Map destinations to one or more Business Service Lanes (e.g., ch -> [lane1,lane2], oip -> [lane3,lane4])
-- Compress hostnames to wildcard patterns (e.g., `sl73abc001`,`sl73abc002` -> `sl73abc*`)
+- Map destinations to one or more Business Service Lanes (e.g., dest1 -> [lane1,lane2], dest2 -> [lane3,lane4])
+- Compress hostnames to wildcard patterns (e.g., `abc001`,`abc002` -> `abc*`)
 - Update `serverclass.conf` whitelist per server class/app
 
 ## Install
@@ -42,7 +42,9 @@ See `config.example.yaml`. Key parts:
 
 - `refreshInterval`: Go duration, e.g., `1m` or `5m`
 - `destinations`: map destination -> array of lanes
-- `dummyCMDB.entries`: list of hostname + businessServiceLane
+- `cmdb.type`: `dummy` or `servicenow`
+- `cmdb.dummy.entries`: list of hostname + businessServiceLane
+- `cmdb.servicenow`: connection (baseURL, table, query, hostnameField, laneField, pageSize, timeout, auth)
 - `serverclass.path`: location of Splunk `serverclass.conf`
 - `serverclass.backup`: whether to create a `.bak` before writing
 - `serverclass.appClass`: app -> serverClass name
@@ -50,5 +52,5 @@ See `config.example.yaml`. Key parts:
 
 ## Notes
 
-- The `serverclass.conf` writer preserves other sections but overwrites the `whitelist` key in the specified `serverClass:<name>` sections.
-- Later we can add real CMDB clients (ServiceNow, REST, DB) behind `internal/cmdb`.
+- The `serverclass.conf` writer preserves other sections but overwrites whitelist entries in the specified `serverClass:<name>` sections.
+- ServiceNow queries use encoded query syntax; use bearer token or basic auth.
