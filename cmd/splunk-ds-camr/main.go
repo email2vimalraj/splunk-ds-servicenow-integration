@@ -36,11 +36,18 @@ func main() {
 	default:
 		cmdbClient = cmdb.NewDummy(cfg.CMDB.Dummy)
 	}
+	// Environment override for dry-run
+	if v := os.Getenv("CAMR_DRY_RUN"); v == "1" || v == "true" {
+		cfg.DryRun = true
+	}
+
 	updater := serverclass.NewUpdater(serverclass.Config{
 		Path:           cfg.Serverclass.Path,
 		Backup:         cfg.Serverclass.Backup,
 		AppClass:       cfg.Serverclass.AppClass,
 		AppDestination: cfg.Serverclass.AppDestination,
+		DryRun:         cfg.DryRun,
+		DryRunApps:     cfg.Serverclass.DryRunApps,
 	})
 
 	// One-shot mode for testing/automation
@@ -105,7 +112,7 @@ func runOnce(ctx context.Context, c cmdb.Client, u *serverclass.Updater, cfg *co
 			continue
 		}
 		patterns := patternsByDest[dest]
-		if err := u.UpdateWhitelist(class, patterns); err != nil {
+		if err := u.UpdateWhitelist(app, class, patterns); err != nil {
 			return err
 		}
 	}

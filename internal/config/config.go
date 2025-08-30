@@ -61,10 +61,12 @@ type ServerclassConfig struct {
 	Backup         bool              `yaml:"backup"`
 	AppClass       map[string]string `yaml:"appClass"`
 	AppDestination map[string]string `yaml:"appDestination"`
+	DryRunApps     []string          `yaml:"dryRunApps"`
 }
 
 type Config struct {
 	RefreshInterval Duration            `yaml:"refreshInterval"`
+	DryRun          bool                `yaml:"dryRun"`
 	Destinations    map[string][]string `yaml:"destinations"`
 	// Deprecated: use CMDB
 	DummyCMDB   DummyCMDBConfig   `yaml:"dummyCMDB"`

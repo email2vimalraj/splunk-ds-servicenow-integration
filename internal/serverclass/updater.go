@@ -2,6 +2,7 @@ package serverclass
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"sort"
@@ -12,23 +13,26 @@ import (
 )
 
 type Updater struct {
-	path   string
-	backup bool
+	path       string
+	backup     bool
+	dryRun     bool
+	dryRunApps []string
 	// App class names are the [serverClass:...] stanzas; whitelist is "whitelist"
 }
-
 type Config struct {
 	Path           string
 	Backup         bool
 	AppClass       map[string]string // app -> class name
 	AppDestination map[string]string // app -> dest key
+	DryRun         bool
+	DryRunApps     []string
 }
 
 func NewUpdater(cfg Config) *Updater {
-	return &Updater{path: cfg.Path, backup: cfg.Backup}
+	return &Updater{path: cfg.Path, backup: cfg.Backup, dryRun: cfg.DryRun, dryRunApps: cfg.DryRunApps}
 }
 
-func (u *Updater) UpdateWhitelist(serverClass string, patterns []string) error {
+func (u *Updater) UpdateWhitelist(app string, serverClass string, patterns []string) error {
 	if err := os.MkdirAll(filepath.Dir(u.path), 0o755); err != nil {
 		return err
 	}
@@ -52,6 +56,8 @@ func (u *Updater) UpdateWhitelist(serverClass string, patterns []string) error {
 	}
 
 	sort.Strings(patterns)
+	// Capture previous whitelist keys
+	prev := collectWhitelist(sec)
 	// Clear previous whitelist keys
 	for _, k := range sec.Keys() {
 		if strings.HasPrefix(k.Name(), "whitelist") {
@@ -64,8 +70,61 @@ func (u *Updater) UpdateWhitelist(serverClass string, patterns []string) error {
 		sec.Key(key).SetValue(p)
 	}
 
+	// Compute diff
+	adds, removes := diffSets(prev, patterns)
+	effectiveDryRun := u.dryRun || contains(u.dryRunApps, app)
+	if effectiveDryRun {
+		log.Printf("[dry-run][app:%s][class:%s] +%d, -%d (file: %s)", app, serverClass, len(adds), len(removes), u.path)
+		return nil
+	}
+	if len(adds) == 0 && len(removes) == 0 {
+		log.Printf("[noop][app:%s][class:%s] no whitelist changes", app, serverClass)
+		return nil
+	}
 	if u.backup {
 		_ = os.Rename(u.path, u.path+".bak")
 	}
 	return cfg.SaveTo(u.path)
+}
+
+func collectWhitelist(sec *ini.Section) []string {
+	var vals []string
+	for _, k := range sec.Keys() {
+		if strings.HasPrefix(k.Name(), "whitelist") {
+			vals = append(vals, k.Value())
+		}
+	}
+	sort.Strings(vals)
+	return vals
+}
+
+func diffSets(oldList, newList []string) (adds, removes []string) {
+	old := make(map[string]struct{}, len(oldList))
+	for _, v := range oldList {
+		old[v] = struct{}{}
+	}
+	newm := make(map[string]struct{}, len(newList))
+	for _, v := range newList {
+		newm[v] = struct{}{}
+		if _, ok := old[v]; !ok {
+			adds = append(adds, v)
+		}
+	}
+	for v := range old {
+		if _, ok := newm[v]; !ok {
+			removes = append(removes, v)
+		}
+	}
+	sort.Strings(adds)
+	sort.Strings(removes)
+	return
+}
+
+func contains(list []string, s string) bool {
+	for _, v := range list {
+		if v == s {
+			return true
+		}
+	}
+	return false
 }

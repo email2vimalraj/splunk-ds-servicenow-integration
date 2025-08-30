@@ -1,5 +1,6 @@
 # Example configuration for splunk-ds-camr
 refreshInterval: 1m
+dryRun: false
 
 destinations:
   dest1: [lane1, lane2]
@@ -44,3 +45,5 @@ serverclass:
   appDestination:
     AA-DESTINATION-dest1: dest1
     AA-DESTINATION-dest2: dest2
+  # optionally run dry-run for selected apps only (in addition to global dryRun)
+  dryRunApps: []

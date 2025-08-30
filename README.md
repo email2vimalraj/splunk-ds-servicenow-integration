@@ -1,4 +1,4 @@
-# splunk-ds-camr
+# Splunk Deployment Server - ServiceNow Integration
 
 A Go utility for Splunk Deployment Servers to map CMDB server entries to destinations and update `serverclass.conf` whitelists with compressed wildcard patterns.
 
@@ -41,6 +41,7 @@ go build -o bin/splunk-ds-camr ./cmd/splunk-ds-camr
 See `config.example.yaml`. Key parts:
 
 - `refreshInterval`: Go duration, e.g., `1m` or `5m`
+- `dryRun`: if true, do not write serverclass.conf; just log what would change
 - `destinations`: map destination -> array of lanes
 - `cmdb.type`: `dummy` or `servicenow`
 - `cmdb.dummy.entries`: list of hostname + businessServiceLane
@@ -49,8 +50,16 @@ See `config.example.yaml`. Key parts:
 - `serverclass.backup`: whether to create a `.bak` before writing
 - `serverclass.appClass`: app -> serverClass name
 - `serverclass.appDestination`: app -> destination key
+- `serverclass.dryRunApps`: list of app names to treat as dry-run even when global dryRun is false
+
+## Dry-run overrides via env:
+
+```bash
+CAMR_DRY_RUN=1 go run ./cmd/splunk-ds-camr
+```
 
 ## Notes
 
 - The `serverclass.conf` writer preserves other sections but overwrites whitelist entries in the specified `serverClass:<name>` sections.
+- Dry-run logs show per-app diffs: counts of additions/removals, without writing the file.
 - ServiceNow queries use encoded query syntax; use bearer token or basic auth.
