@@ -10,7 +10,7 @@ dummyCMDB:
   entries:
     - hostname: sl73abc001
       businessServiceLane: lane1
-    - hostname: sl73abc002
+    - hostname: sl73def002
       businessServiceLane: lane1
     - hostname: sl73xyz101
       businessServiceLane: lane3

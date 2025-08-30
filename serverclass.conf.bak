@@ -1,5 +1,6 @@
 [serverClass:AA-DESTINATION-CH-class]
-whitelist.0 = sl73abc*
+whitelist.0 = sl73abc001
+whitelist.1 = sl73def002
 
 [serverClass:AA-DESTINATION-OIP-class]
 whitelist.0 = sl73xyz*
