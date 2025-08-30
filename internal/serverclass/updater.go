@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/spf13/afero"
 	"gopkg.in/ini.v1"
 )
 
@@ -17,6 +18,7 @@ type Updater struct {
 	backup     bool
 	dryRun     bool
 	dryRunApps []string
+	fs         afero.Fs
 	// App class names are the [serverClass:...] stanzas; whitelist is "whitelist"
 }
 type Config struct {
@@ -29,17 +31,24 @@ type Config struct {
 }
 
 func NewUpdater(cfg Config) *Updater {
-	return &Updater{path: cfg.Path, backup: cfg.Backup, dryRun: cfg.DryRun, dryRunApps: cfg.DryRunApps}
+	return &Updater{path: cfg.Path, backup: cfg.Backup, dryRun: cfg.DryRun, dryRunApps: cfg.DryRunApps, fs: afero.NewOsFs()}
 }
 
+// SetFS allows overriding the filesystem (e.g., in tests) with an in-memory FS.
+func (u *Updater) SetFS(fs afero.Fs) { u.fs = fs }
+
 func (u *Updater) UpdateWhitelist(app string, serverClass string, patterns []string) error {
-	if err := os.MkdirAll(filepath.Dir(u.path), 0o755); err != nil {
+	if err := u.fs.MkdirAll(filepath.Dir(u.path), 0o755); err != nil {
 		return err
 	}
 	var cfg *ini.File
 	var err error
-	if _, err = os.Stat(u.path); err == nil {
-		cfg, err = ini.Load(u.path)
+	if _, err = u.fs.Stat(u.path); err == nil {
+		b, rerr := afero.ReadFile(u.fs, u.path)
+		if rerr != nil {
+			return rerr
+		}
+		cfg, err = ini.Load(b)
 		if err != nil {
 			return fmt.Errorf("load serverclass: %w", err)
 		}
@@ -82,9 +91,15 @@ func (u *Updater) UpdateWhitelist(app string, serverClass string, patterns []str
 		return nil
 	}
 	if u.backup {
-		_ = os.Rename(u.path, u.path+".bak")
+		_ = u.fs.Rename(u.path, u.path+".bak")
 	}
-	return cfg.SaveTo(u.path)
+	f, ferr := u.fs.Create(u.path)
+	if ferr != nil {
+		return ferr
+	}
+	defer f.Close()
+	_, err = cfg.WriteTo(f)
+	return err
 }
 
 func collectWhitelist(sec *ini.Section) []string {
