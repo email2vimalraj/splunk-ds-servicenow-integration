@@ -70,6 +70,17 @@ type WildcardConfig struct {
 	RequireMinFixedPrefix int    `yaml:"requireMinFixedPrefix"` // default 0
 }
 
+type LoggingConfig struct {
+	// JSON structured logging to file with rotation
+	Level      string `yaml:"level"`      // debug|info|warn|error (default: info)
+	File       string `yaml:"file"`       // path to log file (default: ./camr.log)
+	MaxSizeMB  int    `yaml:"maxSizeMB"`  // rotate after size in MB (default: 100)
+	MaxBackups int    `yaml:"maxBackups"` // number of rotated files to keep (default: 7; 0 to keep unlimited)
+	MaxAgeDays int    `yaml:"maxAgeDays"` // days to retain old logs (default: 30; 0 to keep forever)
+	Compress   *bool  `yaml:"compress"`   // gzip old logs (default: true)
+	Stdout     *bool  `yaml:"stdout"`     // also log to stdout (default: true)
+}
+
 type Config struct {
 	RefreshInterval Duration            `yaml:"refreshInterval"`
 	DryRun          bool                `yaml:"dryRun"`
@@ -79,6 +90,7 @@ type Config struct {
 	CMDB        CMDBConfig        `yaml:"cmdb"`
 	Serverclass ServerclassConfig `yaml:"serverclass"`
 	Wildcard    WildcardConfig    `yaml:"wildcard"`
+	Logging     LoggingConfig     `yaml:"logging"`
 }
 
 func Load(path string) (*Config, error) {
@@ -119,6 +131,35 @@ func Load(path string) (*Config, error) {
 	}
 	if cfg.Wildcard.RequireMinFixedPrefix < 0 {
 		cfg.Wildcard.RequireMinFixedPrefix = 0
+	}
+	// Logging defaults
+	if cfg.Logging.Level == "" {
+		cfg.Logging.Level = "info"
+	}
+	if cfg.Logging.File == "" {
+		cfg.Logging.File = "./camr.log"
+	}
+	if cfg.Logging.MaxSizeMB <= 0 {
+		cfg.Logging.MaxSizeMB = 100
+	}
+	if cfg.Logging.MaxBackups < 0 {
+		cfg.Logging.MaxBackups = 7
+	} else if cfg.Logging.MaxBackups == 0 {
+		cfg.Logging.MaxBackups = 7
+	}
+	if cfg.Logging.MaxAgeDays < 0 {
+		cfg.Logging.MaxAgeDays = 30
+	} else if cfg.Logging.MaxAgeDays == 0 {
+		cfg.Logging.MaxAgeDays = 30
+	}
+	// defaults for bool pointers
+	if cfg.Logging.Compress == nil {
+		v := true
+		cfg.Logging.Compress = &v
+	}
+	if cfg.Logging.Stdout == nil {
+		v := true
+		cfg.Logging.Stdout = &v
 	}
 	return &cfg, nil
 }

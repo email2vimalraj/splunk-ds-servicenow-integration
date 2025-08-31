@@ -9,6 +9,7 @@ A Go utility for Splunk Deployment Servers to map CMDB server entries to destina
 - Map destinations to one or more Business Service Lanes (e.g., dest1 -> [lane1,lane2], dest2 -> [lane3,lane4])
 - Compress hostnames to wildcard patterns (e.g., `abc001`,`abc002` -> `abc*`)
 - Update `serverclass.conf` whitelist per server class/app
+- JSON structured logging to file with rotation (configurable)
 
 ## Install
 
@@ -55,6 +56,10 @@ See `config.example.yaml`. Key parts:
   - `mode`: `trailingOnly` (default) or `internalNumeric`
   - `minGroupSize`: minimum hosts required to emit a wildcard (default 2)
   - `requireMinFixedPrefix`: guardrail to avoid overly broad patterns (default 0)
+- `logging`: JSON structured logs with rotation
+  - `level`: `debug|info|warn|error`
+  - `file`: log file path
+  - `maxSizeMB`, `maxBackups`, `maxAgeDays`, `compress`, `stdout`
 
 ## Dry-run overrides via env:
 
@@ -67,3 +72,4 @@ CAMR_DRY_RUN=1 go run ./cmd/splunk-ds-camr
 - The `serverclass.conf` writer preserves other sections but overwrites whitelist entries in the specified `serverClass:<name>` sections.
 - Dry-run logs show per-app diffs: counts of additions/removals, without writing the file.
 - ServiceNow queries use encoded query syntax; use bearer token or basic auth.
+- Logs are JSON via Go slog and rotated via lumberjack; they go to the configured file and optionally stdout.

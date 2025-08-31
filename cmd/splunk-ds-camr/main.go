@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,6 +11,7 @@ import (
 	"github.com/example/splunk-ds-camr/internal/cmdb"
 	sn "github.com/example/splunk-ds-camr/internal/cmdb/servicenow"
 	"github.com/example/splunk-ds-camr/internal/config"
+	"github.com/example/splunk-ds-camr/internal/logging"
 	"github.com/example/splunk-ds-camr/internal/patterns"
 	"github.com/example/splunk-ds-camr/internal/serverclass"
 )
@@ -23,8 +24,13 @@ func main() {
 
 	cfg, err := config.Load(cfgPath)
 	if err != nil {
-		log.Fatalf("load config: %v", err)
+		// can't init logger yet; print to stderr and exit
+		panic(err)
 	}
+
+	// Initialize structured logging
+	cleanup := logging.Init(cfg.Logging)
+	defer cleanup()
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
@@ -53,24 +59,25 @@ func main() {
 	// One-shot mode for testing/automation
 	if once := os.Getenv("CAMR_ONCE"); once == "1" || once == "true" {
 		if err := runOnce(ctx, cmdbClient, updater, cfg); err != nil {
-			log.Fatalf("run once: %v", err)
+			slog.Error("run once failed", "err", err)
+			os.Exit(1)
 		}
-		log.Println("completed single run")
+		slog.Info("completed single run")
 		return
 	}
 
 	ticker := time.NewTicker(cfg.RefreshInterval.Duration)
 	defer ticker.Stop()
 
-	log.Printf("starting with refresh interval %s", cfg.RefreshInterval.Duration)
+	slog.Info("starting", "refreshInterval", cfg.RefreshInterval.Duration.String())
 	for {
 		if err := runOnce(ctx, cmdbClient, updater, cfg); err != nil {
-			log.Printf("error: %v", err)
+			slog.Error("run error", "err", err)
 		}
 
 		select {
 		case <-ctx.Done():
-			log.Println("shutting down")
+			slog.Info("shutting down")
 			return
 		case <-ticker.C:
 		}

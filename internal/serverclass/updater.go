@@ -3,7 +3,7 @@ package serverclass
 import (
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
@@ -85,11 +85,17 @@ func (u *Updater) UpdateWhitelist(app string, serverClass string, patterns []str
 	adds, removes := diffSets(prev, patterns)
 	effectiveDryRun := u.dryRun || contains(u.dryRunApps, app)
 	if effectiveDryRun {
-		log.Printf("[dry-run][app:%s][class:%s] +%d, -%d (file: %s)", app, serverClass, len(adds), len(removes), u.path)
+		slog.Info("dry-run whitelist update",
+			"app", app,
+			"class", serverClass,
+			"+adds", len(adds),
+			"-removes", len(removes),
+			"file", u.path,
+		)
 		return nil
 	}
 	if len(adds) == 0 && len(removes) == 0 {
-		log.Printf("[noop][app:%s][class:%s] no whitelist changes", app, serverClass)
+		slog.Info("noop whitelist update", "app", app, "class", serverClass)
 		return nil
 	}
 	// Perform timestamped backup (copy) if enabled and target exists

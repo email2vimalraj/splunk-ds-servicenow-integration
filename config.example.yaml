@@ -53,3 +53,13 @@ serverclass:
     AA-DESTINATION-dest2: dest2
   # optionally run dry-run for selected apps only (in addition to global dryRun)
   dryRunApps: []
+
+# logging configuration
+logging:
+  level: info          # debug|info|warn|error
+  file: ./camr.log     # log file path
+  maxSizeMB: 100       # rotate after this size
+  maxBackups: 7        # files to keep
+  maxAgeDays: 30       # days to keep
+  compress: true       # gzip old logs
+  stdout: true         # also log to stdout
