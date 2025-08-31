@@ -2,12 +2,14 @@ package serverclass
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/spf13/afero"
 	"gopkg.in/ini.v1"
@@ -90,16 +92,59 @@ func (u *Updater) UpdateWhitelist(app string, serverClass string, patterns []str
 		log.Printf("[noop][app:%s][class:%s] no whitelist changes", app, serverClass)
 		return nil
 	}
+	// Perform timestamped backup (copy) if enabled and target exists
 	if u.backup {
-		_ = u.fs.Rename(u.path, u.path+".bak")
+		if _, statErr := u.fs.Stat(u.path); statErr == nil {
+			if _, err := u.makeTimestampBackup(); err != nil {
+				return err
+			}
+		}
 	}
-	f, ferr := u.fs.Create(u.path)
+
+	// Write to a temp file then atomically replace
+	ts := time.Now().UTC().Format("20060102-150405")
+	tmpPath := fmt.Sprintf("%s.tmp-%d-%s", u.path, os.Getpid(), ts)
+	f, ferr := u.fs.Create(tmpPath)
 	if ferr != nil {
 		return ferr
 	}
-	defer f.Close()
-	_, err = cfg.WriteTo(f)
-	return err
+	_, werr := cfg.WriteTo(f)
+	cerr := f.Close()
+	if werr != nil {
+		_ = u.fs.Remove(tmpPath)
+		return werr
+	}
+	if cerr != nil {
+		_ = u.fs.Remove(tmpPath)
+		return cerr
+	}
+	if rerr := u.fs.Rename(tmpPath, u.path); rerr != nil {
+		// rollback: original file still intact (we only wrote temp). Cleanup temp and bubble error
+		_ = u.fs.Remove(tmpPath)
+		return rerr
+	}
+	return nil
+}
+
+// makeTimestampBackup creates a copy of the current target file with a timestamped .bak suffix.
+func (u *Updater) makeTimestampBackup() (string, error) {
+	ts := time.Now().UTC().Format("20060102-150405")
+	backupPath := fmt.Sprintf("%s.%s.bak", u.path, ts)
+	src, err := u.fs.Open(u.path)
+	if err != nil {
+		return "", err
+	}
+	defer src.Close()
+	dst, err := u.fs.Create(backupPath)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = dst.Close() }()
+	if _, err := io.Copy(dst, src); err != nil {
+		_ = u.fs.Remove(backupPath)
+		return "", err
+	}
+	return backupPath, nil
 }
 
 func collectWhitelist(sec *ini.Section) []string {
