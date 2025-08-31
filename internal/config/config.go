@@ -64,6 +64,12 @@ type ServerclassConfig struct {
 	DryRunApps     []string          `yaml:"dryRunApps"`
 }
 
+type WildcardConfig struct {
+	Mode                  string `yaml:"mode"`                  // "trailingOnly" | "internalNumeric"
+	MinGroupSize          int    `yaml:"minGroupSize"`          // default 2
+	RequireMinFixedPrefix int    `yaml:"requireMinFixedPrefix"` // default 0
+}
+
 type Config struct {
 	RefreshInterval Duration            `yaml:"refreshInterval"`
 	DryRun          bool                `yaml:"dryRun"`
@@ -72,6 +78,7 @@ type Config struct {
 	DummyCMDB   DummyCMDBConfig   `yaml:"dummyCMDB"`
 	CMDB        CMDBConfig        `yaml:"cmdb"`
 	Serverclass ServerclassConfig `yaml:"serverclass"`
+	Wildcard    WildcardConfig    `yaml:"wildcard"`
 }
 
 func Load(path string) (*Config, error) {
@@ -102,6 +109,16 @@ func Load(path string) (*Config, error) {
 		if cfg.CMDB.ServiceNow.Timeout.Duration == 0 {
 			cfg.CMDB.ServiceNow.Timeout = Duration{Duration: 30 * time.Second}
 		}
+	}
+	// Wildcard defaults
+	if cfg.Wildcard.Mode == "" {
+		cfg.Wildcard.Mode = "trailingOnly"
+	}
+	if cfg.Wildcard.MinGroupSize <= 0 {
+		cfg.Wildcard.MinGroupSize = 2
+	}
+	if cfg.Wildcard.RequireMinFixedPrefix < 0 {
+		cfg.Wildcard.RequireMinFixedPrefix = 0
 	}
 	return &cfg, nil
 }

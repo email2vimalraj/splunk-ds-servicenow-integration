@@ -102,7 +102,12 @@ func runOnce(ctx context.Context, c cmdb.Client, u *serverclass.Updater, cfg *co
 	// compress hosts into wildcard patterns per destination
 	patternsByDest := map[string][]string{}
 	for dest, hosts := range hostsByDest {
-		patternsByDest[dest] = patterns.GenerateWildcards(hosts)
+		opts := patterns.Options{
+			Mode:                  cfg.Wildcard.Mode,
+			MinGroupSize:          cfg.Wildcard.MinGroupSize,
+			RequireMinFixedPrefix: cfg.Wildcard.RequireMinFixedPrefix,
+		}
+		patternsByDest[dest] = patterns.GenerateWildcardsWithOptions(hosts, opts)
 	}
 
 	// update serverclass files for each destination mapping

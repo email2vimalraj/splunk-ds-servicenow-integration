@@ -51,6 +51,10 @@ See `config.example.yaml`. Key parts:
 - `serverclass.appClass`: app -> serverClass name
 - `serverclass.appDestination`: app -> destination key
 - `serverclass.dryRunApps`: list of app names to treat as dry-run even when global dryRun is false
+- `wildcard`: controls pattern generation
+  - `mode`: `trailingOnly` (default) or `internalNumeric`
+  - `minGroupSize`: minimum hosts required to emit a wildcard (default 2)
+  - `requireMinFixedPrefix`: guardrail to avoid overly broad patterns (default 0)
 
 ## Dry-run overrides via env:
 

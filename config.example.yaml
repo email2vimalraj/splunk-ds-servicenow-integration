@@ -6,6 +6,12 @@ destinations:
   dest1: [lane1, lane2]
   dest2: [lane3, lane4]
 
+# wildcard generation settings
+wildcard:
+  mode: trailingOnly          # or internalNumeric
+  minGroupSize: 2             # only wildcard groups with >=2 hosts
+  requireMinFixedPrefix: 0    # fixed prefix length before first '*'
+
 cmdb:
   # type can be: dummy | servicenow
   type: dummy
